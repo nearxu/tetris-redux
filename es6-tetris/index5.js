@@ -19,6 +19,12 @@ class Block {
           }
           this.curTop++;
           setTimeout(loop.bind(this), 600);
+        } else {
+          for (let i = 0; i <= activeModel.length - 1; i++) {
+            activeModel[i].className = "inactiveModel";
+          }
+          init();
+          clearTimeout(fallDown);
         }
       }.bind(this),
       600
@@ -134,44 +140,114 @@ class Block {
    *  @param deform 是否需要形变
    * @returns {{canMoveRight: boolean, canMoveLeft: boolean, canMoveTop: boolean, canMoveDown: boolean}}
    */
-  canMove(arr, deform = false) {
-    let tops = [],
-      lefts = [];
+  canMove(
+    arr,
+    deform = false,
+    move = {
+      canMoveRight: true,
+      canMoveDown: true,
+      canMoveLeft: true
+    }
+  ) {
     this.checkArrWith1(arr, function(i, j) {
-      tops.push(parseInt(i * this.BLOCK_SIZE));
-      lefts.push(parseInt(j * this.BLOCK_SIZE));
+      let { highest, leftmost, rightmost } = this.getInterval(
+        j * this.BLOCK_SIZE,
+        i * this.BLOCK_SIZE
+      );
+      //   if (deform) {
+      //     if (this.BLOCK_SIZE * (j + 1) > rightmost) {
+      //       move.canMoveRight = false;
+      //     }
+      //     if (this.BLOCK_SIZE * (i + 1) > highest) {
+      //       move.canMoveDown = false;
+      //     }
+      //     if (this.BLOCK_SIZE * (j - 1) < leftmost) {
+      //       move.canMoveLeft = false;
+      //     }
+      //   } else {
+      if (this.BLOCK_SIZE * (j + 1) >= rightmost) {
+        move.canMoveRight = false;
+      }
+      if (this.BLOCK_SIZE * (i + 1) >= highest) {
+        move.canMoveDown = false;
+      }
+      if (this.BLOCK_SIZE * (j - 1) <= leftmost) {
+        move.canMoveLeft = false;
+      }
+      //   }
     });
-    let top = Math.min(...tops),
-      left = Math.min(...lefts),
-      right = Math.max(...lefts),
-      down = Math.max(...tops);
-    let canMoveRight = true,
-      canMoveTop = true,
-      canMoveDown = true,
-      canMoveLeft = true;
-    if (deform) {
-      // if (top - 20 < this.siteSize.top) {
-      //   canMoveTop = false;
-      // }
-      canMoveTop = false;
-    }
-    if (left + 20 >= this.siteSize.left + this.siteSize.width) {
-      canMoveRight = false;
-    }
-    if (left - 20 < this.siteSize.left) {
-      canMoveLeft = false;
-    }
-    if (top + 20 >= this.siteSize.top + this.siteSize.height) {
-      canMoveDown = false;
+    return move;
+  }
+
+  /**
+   * 获取当前方块能到达的边界
+   * @param curLeft 当前方块left
+   * @param curTop 当前方块top
+   * @returns {*} 返回左右下边界
+   */
+  getInterval(curLeft, curTop) {
+    let inactiveModel = document.querySelectorAll(".inactiveModel"),
+      highest = null,
+      leftmost = null,
+      rightmost = null;
+    if (inactiveModel.length === 0) {
+      highest = this.siteSize.top + this.siteSize.height;
+      leftmost = this.siteSize.left - this.BLOCK_SIZE;
+      rightmost = this.siteSize.left + this.siteSize.width;
+    } else {
+      let tops = [],
+        lefts = [],
+        rights = [];
+      for (let v of inactiveModel) {
+        let left = parseInt(v.style.left);
+        let top = parseInt(v.style.top);
+        if (left === curLeft) {
+          tops.push(top);
+        }
+        if (top === curTop) {
+          if (left < curLeft) {
+            lefts.push(left);
+          } else if (left > curLeft) {
+            rights.push(left);
+          }
+        }
+      }
+      if (tops.length === 0) {
+        highest = this.siteSize.top + this.siteSize.height;
+      } else {
+        highest = Math.min(...tops);
+      }
+      if (lefts.length === 0) {
+        leftmost = this.siteSize.left - this.BLOCK_SIZE;
+      } else {
+        leftmost = Math.max(...lefts);
+      }
+      if (rights.length === 0) {
+        rightmost = this.siteSize.left + this.siteSize.width;
+      } else {
+        rightmost = Math.min(...rights);
+      }
     }
     return {
-      canMoveRight,
-      canMoveLeft,
-      canMoveTop,
-      canMoveDown
+      highest: highest,
+      leftmost: leftmost,
+      rightmost: rightmost
     };
   }
 }
+
+const init = () => {
+  const params = {
+    arr: __arr__,
+    siteSize: __siteSize__,
+    BLOCK_SIZE: __BLOCK_SIZE__,
+    curLeft: __curLeft__,
+    curTop: __curTop__
+  };
+  let block = new Block(params);
+  block.init();
+  block.move();
+};
 
 window.onload = () => {
   //获取画布大小&位置
@@ -190,16 +266,10 @@ window.onload = () => {
   //俄罗斯方块初始位置
   let curLeft = parseInt((siteSize.left + siteSize.width / 2) / BLOCK_SIZE);
   let curTop = parseInt(siteSize.top / BLOCK_SIZE);
-
-  //传入Block的变量
-  const params = {
-    arr: arr,
-    siteSize: siteSize,
-    BLOCK_SIZE: BLOCK_SIZE,
-    curLeft: curLeft,
-    curTop: curTop
-  };
-  let block = new Block(params);
-  block.init();
-  block.move();
+  window.__arr__ = arr;
+  window.__siteSize__ = siteSize;
+  window.__BLOCK_SIZE__ = BLOCK_SIZE;
+  window.__curLeft__ = curLeft;
+  window.__curTop__ = curTop;
+  init();
 };

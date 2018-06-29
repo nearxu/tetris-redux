@@ -20,8 +20,8 @@ class Block {
    * @param callback
    */
   checkArrWith1(arr, callback) {
-    for (let i = 0; i < arr.length - 1; i++) {
-      for (let j = 0; j < arr.length - 1; j++) {
+    for (let i = 0; i <= arr.length - 1; i++) {
+      for (let j = 0; j <= arr.length - 1; j++) {
         if (arr[i][j] === 1) {
           callback.call(this, i, j);
         }
